@@ -1,3 +1,4 @@
+
 <template>
   <div class="container">
     <p class="spaceTip">{{'空格开始游戏或跳跃(Space) 当前得分(Count):'}}</p>
@@ -127,7 +128,7 @@ export default {
     birdJump () {
       // this.downTime = 0
       // this.speed = 251 * this.jumpPower
-      this.birdData.top -= 20;
+      this.birdData.top -= 40;
       this.birdMove()
     },
     birdMove () {
@@ -218,7 +219,7 @@ export default {
         bottomPipeSrc: require("../assets/img/bird/pipeBottom.png"),
         isCross: "no" //是否已被穿过
       };
-      this.pipeArr.push(pipe);
+      this.pipeArr.push(pipe)
       // console.log(topH, pipe.topPipeTop, pipe.bottomPipeTop)
     }
   },
@@ -276,7 +277,7 @@ export default {
   .birdWing{
     width: 100%;
     height: 100%;
-    border: 4px solid black;
+    /*border: 4px solid black;*/
     animation: birdWing 1s infinite;
     /*float: left;*/
   }
@@ -284,7 +285,7 @@ export default {
     width: 30px;
     height: 30px;
     position: absolute;
-    border: 2px solid red;
+    /*border: 2px solid red;*/
   }
   .birdJump{
     animation: birdJump 1.3s;
