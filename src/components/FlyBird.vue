@@ -24,10 +24,11 @@
                 </span>
               </div>
             </transition>
-            <transition name="">
+            <transition name="alanAlert">
               <img src="../assets/img/bird/success.png" alt="success"
                 class="success_img"
-                v-show="false">
+                v-show="successTip.isShow"
+                :style="successAttr">
             </transition>
 
             <!--bird-->
@@ -61,7 +62,7 @@ export default {
   data () {
     return {
       isStart: false,
-      accelerated: 50, //加速度
+      accelerated: 500, //加速度
       speed: 0, //速度
       birdData: {
         top: 300,
@@ -76,7 +77,13 @@ export default {
       pipeArr: [],
       pipeDistance: 150, //管道间隔距离
       pipeTimer: null,
-      pipeMoveDistance: 2 //管道移动距离
+      pipeMoveDistance: 2, //管道移动距离
+      successCount: 0, //成功次数
+      successTip: {
+        top: 210,
+        right: 500,
+        isShow: false
+      } //成功提示
     }
   },
   mounted () {
@@ -92,6 +99,12 @@ export default {
   computed: {
     birdFly () {
       // console.log(this.birdData.top, this.birdData.right)
+      return {
+        top: this.birdData.top + 'px',
+        right: this.birdData.right + 'px'
+      }
+    },
+    successAttr() {
       return {
         top: this.birdData.top + 'px',
         right: this.birdData.right + 'px'
@@ -124,29 +137,31 @@ export default {
       // this.createPipe()
       this.pipeMove()
       this.birdMove()
+      this.successCount = 0
+      this.isStart = true
     },
     birdJump () {
-      // this.downTime = 0
-      // this.speed = 251 * this.jumpPower
-      this.birdData.top -= 40;
+      const {jumpPower} = this
+      this.downTime = 0;
+      this.speed = 200 * jumpPower
       this.birdMove()
     },
     birdMove () {
+      let {timerNumber, birdData, speed, accelerated} = this
       clearInterval(this.moveTimer)
-      let lastTop = this.birdData.top //初始化当前top
+      let lastTop = birdData.top //初始化当前top
       this.moveTimer = setInterval(() => {
 
-        this.downTime += this.timerNumber / 1000 //记录下降时间
-
+        this.downTime += timerNumber / 1000 //记录下降时间
+        const {downTime} = this
         //上一次跳跃的距离 + 当前产生的位移(下落距离 - 上抛距离)
-        const currentTop = 0.5 * this.accelerated * this.downTime - this.speed * this.downTime
-        console.log('currentTop '+currentTop, lastTop, 0.5 * this.accelerated * this.downTime, this.speed * this.downTime)
+        const currentTop = 0.5 * accelerated * downTime * downTime - speed * downTime
         const height = lastTop + currentTop
 
         if (height>lastTop) {
-          if (this.birdData.sports !== 'fall') this.birdData.sports = 'fall'
+          if (birdData.sports !== 'fall') this.birdData.sports = 'fall'
         } else{
-          if (this.birdData.sports !== 'jump') this.birdData.sports = 'jump'
+          if (birdData.sports !== 'jump') this.birdData.sports = 'jump'
         }
 
         const birdBox = this.$refs.birdBox
@@ -155,14 +170,14 @@ export default {
         const birdHeight = bird.offsetHeight
 
         if (height>birdBoxHeight - birdHeight - 70) {
-          this.birdData.top = birdBoxHeight - birdHeight - 70 //小鸟运动的边界值
+          birdData.top = birdBoxHeight - birdHeight - 70 //小鸟运动的边界值
           // console.log(this.birdData.top, birdBoxHeight - birdHeight - 70, "!!!")
           clearInterval(this.moveTimer)
         } else {
-          this.birdData.top = height
+          birdData.top = height
           // console.log(this.birdData.top, birdBoxHeight, '@@@@')
         }
-      }, this.timerNumber)
+      }, timerNumber)
     },
     pipeMove () {
       const birdBox = this.$refs.birdBox
@@ -186,27 +201,63 @@ export default {
         for (let i=0; i<this.pipeArr.length; i++) {
           const item = this.pipeArr[i]
           if (item.isCross === 'no') {
-            // const res = this.judgeIsPass(item)
-            // switch (res) {
-            //   case 'success':
-            //     // this.passPipe()
-            //     item.isCross = true
-            //     break
-            //   case 'fail':
-            //     // this.gameOver()
-            //     break
-            //   case 'flying':
-            //     break
-            // }
+            const res = this.judgeIsPassPipe(item)
+            console.log(res)
+            switch (res) {
+              case 'isSuccess':
+                this.passPipe()
+                item.isCross = 'is'
+                break
+              case 'isFail':
+                this.gameOver()
+                break
+              case 'isFlying':
+                break
+            }
           }
         }
       }, 30)
     },
+    judgeIsPassPipe({right, topPipeTop, bottomPipeTop}){
+      const {birdData} = this;
+      const {top: birdTop, right: birdRight} = birdData;
+      const pipeWidth = 52, //管道宽度
+        pipeHeight = 420, //管道高度
+        birdHeight = 30, //鸟的高度
+        errorAllow = 5
+      //通过
+
+      if(birdRight<=right){
+        return 'isSuccess';
+      }
+      //未通过
+      if((birdRight <= (right + pipeWidth)) && (birdRight > right)){
+        //是否碰到上下界
+        if(
+          (birdTop + errorAllow <= topPipeTop + pipeHeight) || (birdTop + birdHeight - errorAllow >= bottomPipeTop)
+        ){
+          return 'isFail';
+        }
+      }
+      return 'isFlying';
+    },
+    passPipe(){
+      const {birdData} = this
+      this.successCount++;
+      this.successTip = {
+        top: birdData.top,
+        right: birdData.right - 120,
+        isShow: true
+      };
+      setTimeout(() => {
+        this.successTip.isShow = false
+      }, 500);
+    },
     createPipe () {
       const birdBox = this.$refs.birdBox
       const birdHeight = birdBox.offsetHeight
-      const pipeDist = 150
-      const topH = ~~(Math.random() * (birdHeight - pipeDist - 150))
+      const pipeDist = 120
+      const topH = ~~(Math.random() * (birdHeight - pipeDist - 120))
       //1.0 创造一组管道
       const initRight = 300 //管道离右边的初始距离
       const pipeW = 52 //管道图片宽度
@@ -221,15 +272,15 @@ export default {
       };
       this.pipeArr.push(pipe)
       // console.log(topH, pipe.topPipeTop, pipe.bottomPipeTop)
+    },
+    gameOver () {
+      clearInterval(this.pipeTimer)
+      clearInterval(this.moveTimer)
+      this.isStart = false
+      this.downTime = 0
+      this.pipeArr = []
+      //  记录
     }
-  },
-  gameOver () {
-    clearInterval(this.pipeTimer)
-    clearInterval(this.moveTimer)
-    this.isStart = false
-    this.downTime = 0
-    this.pipeArr = []
-  //  记录
   }
 }
 </script>
@@ -332,7 +383,7 @@ export default {
     }
   }
   .pipeGroup{
-    border: 1px solid red;
+    /*border: 1px solid red;*/
     width: 52px;
     height: 100%;
     position: absolute;
@@ -345,7 +396,7 @@ export default {
     width: 40px;
     height: 420px;
     left: 0;
-    border: 2px solid black;
+    /*border: 2px solid black;*/
   }
   .land{
     background: url("../assets/img/bird/land.png");
@@ -353,4 +404,37 @@ export default {
     margin-top: -70px;
     position: relative;
   }
+  .alanAlert-enter-active {
+    animation: alertIn .3s;
+  }
+
+  .alanAlert-leave-active {
+    animation: alertOut .3s;
+  }
+
+  @keyframes alertIn {
+
+    0% {
+      transform: scale(1.1);
+      opacity: 0;
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes alertOut {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    100% {
+      transform: translateY(-30px);
+      opacity: 0;
+    }
+  }
+
 </style>
