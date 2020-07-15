@@ -1,7 +1,7 @@
 
 <template>
   <div class="container">
-    <p class="spaceTip">{{'空格开始游戏或跳跃(Space) 当前得分(Count):'}}</p>
+    <p class="spaceTip">{{'空格开始游戏或跳跃(Space) 当前得分(Count):' + birdScore}}</p>
 
     <div class="scoreTip wow translateRight" data-wow-duration="0.4s" data-wow-delay="0.7s" data-wow-offset="0">
       <!--          <span-->
@@ -56,6 +56,7 @@
 
 <script>
 import {WOW} from 'wowjs'
+import {mapGetters} from "vuex"
 
 export default {
   name: 'FlyBird',
@@ -109,7 +110,8 @@ export default {
         top: this.birdData.top + 'px',
         right: this.birdData.right + 'px'
       }
-    }
+    },
+    ...mapGetters(['birdScore']) //显示最高得分
   },
   methods: {
     animate () {
